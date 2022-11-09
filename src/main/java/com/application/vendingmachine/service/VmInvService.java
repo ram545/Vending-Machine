@@ -1,12 +1,12 @@
 package com.application.vendingmachine.service;
 
 import com.application.vendingmachine.exception.NoSuchItemException;
+import com.application.vendingmachine.exception.PriceMismatchException;
 import com.application.vendingmachine.model.VmInvModel;
 import com.application.vendingmachine.repository.VmInvRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,19 +25,58 @@ public class VmInvService {
         this.transObj = null;
     }
 
-    public void addNewItem(String item, Double price, int quantity){
+    public void addItem(String item, Double price, int quantity) throws PriceMismatchException {
+        if(invHandle.existsById(item)){
+            VmInvModel data = invHandle.findById(item).get();
+            if(data.getPrice() != price)
+                throw new PriceMismatchException("Please use update to make any prices changes to the existing inventory");
+            quantity += data.getQuantity();
+            invHandle.deleteById(item);
+        }
         invHandle.save(new VmInvModel(item, price, quantity));
     }
 
-    public void deleteItem(String item){
-        try {
+    public void deleteItem(String item) throws NoSuchItemException {
+        if(invHandle.existsById(item))
             invHandle.deleteById(item);
-        }catch(EmptyResultDataAccessException ex){
-            logger.error("No Item Found " + ex.getMessage());
+        else
+            throw new NoSuchItemException("No Such Item exists in Inventory");
+    }
+    public void updatePrice(String item, double price) throws NoSuchItemException {
+        if(invHandle.existsById(item)){
+            VmInvModel data = invHandle.findById(item).get();
+            deleteItem(item);
+            data.setPrice(price);
+            invHandle.save(data);
         }
+        else
+            throw new NoSuchItemException("No Such Item exists in Inventory");
+    }
+    public void updateQuantity(String item, int quantity) throws NoSuchItemException {
+        if(invHandle.existsById(item)){
+            VmInvModel data = invHandle.findById(item).get();
+            deleteItem(item);
+            data.setQuantity(quantity);
+            invHandle.save(data);
+        }
+        else
+            throw new NoSuchItemException("No Such Item exists in Inventory");
     }
 
-    public List<VmInvModel> listItems(){
+    public void updateAll(String item, double price, int quantity) throws NoSuchItemException {
+        if(invHandle.existsById(item)){
+            deleteItem(item);
+            invHandle.save(new VmInvModel(item,price,quantity));
+        }
+        else
+            throw new NoSuchItemException("No Such Item exists in Inventory");
+    }
+
+    public void deleteInventory() {
+        invHandle.deleteAll();
+    }
+
+    public List<VmInvModel> listInventory(){
         ArrayList<VmInvModel> invData = new ArrayList<VmInvModel>();
         invHandle.findAll().forEach(invData::add);
         return invData;
@@ -47,7 +86,7 @@ public class VmInvService {
         if(invHandle.existsById(item))
             transObj = (invHandle.findById(item)).get();
         else
-            throw new NoSuchItemException("No Such Item exists in DataBase");
+            throw new NoSuchItemException("No Such Item exists in Inventory");
     }
 
     public boolean inStock(){
@@ -58,9 +97,10 @@ public class VmInvService {
         return transObj.getPrice();
     }
 
-    public void updateItemData(){
+    public void commitTransaction(){
         transObj.setPrice(transObj.getPrice()-1);
         invHandle.save(transObj);
         transObj = null;
     }
+
 }
