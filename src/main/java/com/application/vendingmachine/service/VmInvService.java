@@ -21,6 +21,14 @@ public class VmInvService {
     // holds the data of the current selected item
     private VmInvModel transObj;
 
+    public VmInvModel getTransObj() {
+        return transObj;
+    }
+
+    public void setTransObj(VmInvModel transObj) {
+        this.transObj = transObj;
+    }
+
     public VmInvService() {
         this.transObj = null;
     }
@@ -80,21 +88,6 @@ public class VmInvService {
         ArrayList<VmInvModel> invData = new ArrayList<VmInvModel>();
         invHandle.findAll().forEach(invData::add);
         return invData;
-    }
-
-    public void loadItem(String item) throws NoSuchItemException {
-        if(invHandle.existsById(item))
-            transObj = (invHandle.findById(item)).get();
-        else
-            throw new NoSuchItemException("No Such Item exists in Inventory");
-    }
-
-    public boolean inStock(){
-        return (transObj.getQuantity() > 0) ? true : false;
-    }
-
-    public double getPrice(){
-        return transObj.getPrice();
     }
 
     public void commitTransaction(){

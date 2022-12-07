@@ -101,7 +101,7 @@ public class VmMoneyService {
     }
 
     // checks whether the required change is present
-    public boolean isChangePresent(int amount){
+    public boolean isChangePresent(double amount){
         boolean isPresent = false;
         int remainder = 0, denomination = 0, quotient = 0, quantity = 0;
         ListIterator<Integer> iter = acceptedDenominations.listIterator(acceptedDenominations.size());
@@ -111,7 +111,7 @@ public class VmMoneyService {
             denomination = iter.previous();
             quantity = changePresent.get(denomination);
             if(denomination <= amount){
-                quotient = amount/denomination;
+                quotient = (int) (amount/denomination);
                 quotient = (quotient < quantity) ? quotient : quantity;
                 amount -= (quotient*denomination);
                 changeToReturn.put(denomination,quotient);
